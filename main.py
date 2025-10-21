@@ -16,8 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Retorna a interface web
-app.mount("/", StaticFiles(directory="www", html=True), name="www")
 
 @app.post("/register")
 async def register(
@@ -52,3 +50,6 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
     if exc.status_code == 404:
         return FileResponse("www/notfound.html", status_code=404, media_type="text/html")
     return await http_exception_handler(request, exc)
+
+# Retorna a interface web (colocado depois das rotas para não interceptar requisições POST)
+app.mount("/", StaticFiles(directory="www", html=True), name="www")

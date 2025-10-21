@@ -2,11 +2,11 @@ from typing import List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 from fastapi.responses import FileResponse
 from fastapi.exception_handlers import http_exception_handler
+
 app = FastAPI(title="FaceAuth API", version="0.0.1")
 
 app.add_middleware(
@@ -34,12 +34,12 @@ async def register(
 @app.post("/login")
 async def login(
     username: str = Form(...),
-    image: UploadFile = File(...)
+    images: List[UploadFile] = File(...)
 ):
     if not username:
         raise HTTPException(status_code=400, detail="username_required")
-    if not image:
-        raise HTTPException(status_code=400, detail="image_required")
+    if not images or len(images) == 0:
+        raise HTTPException(status_code=400, detail="images_required")
     
     # Logica de login ficaria aqui
     return {"msg": f"Login realizado para {username}"}

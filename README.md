@@ -6,3 +6,4 @@ This project was developed for the Image Processing course at Universidade Pauli
 ### Group members:
 - Luiz Paulo Fernandes Garcia
 - Pedro Avelino
+- Kaique Medeiros

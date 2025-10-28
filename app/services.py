@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import logging
 from typing import Tuple, Optional, List
 
 from app.utils import (
@@ -99,11 +100,15 @@ def get_embedding(rgb_face: np.ndarray) -> Optional[np.ndarray]:
     Extrai embedding usando face_recognition. Retorna 1-d numpy array ou None.
     """
     try:
+
         import face_recognition
-    except Exception:
+        print("importei essa bosta")
+    except Exception as error:
+        # Logar o erro de import de forma segura (evita concatenar objeto Exception)
+        logging.warning("face_recognition import error: %s", error)
         # face_recognition não instalado / dlib ausente
         return None
-
+    print("passou")
     encs = face_recognition.face_encodings(rgb_face)
     if not encs:
         return None

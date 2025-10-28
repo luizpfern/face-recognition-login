@@ -6,6 +6,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 from fastapi.responses import FileResponse
 from fastapi.exception_handlers import http_exception_handler
+from app.services import (
+    decode_image_bytes,
+    detect_and_validate,
+    align_face,
+    preprocess_face,
+    get_embedding,
+    compare_embeddings,
+)
+from app.repository import InMemoryUserRepo
 
 app = FastAPI(title="FaceAuth API", version="0.0.1")
 
@@ -15,6 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# repositório simples em memória (injeção direta para simplicidade)
+user_repo = InMemoryUserRepo()
 
 
 @app.post("/register")
@@ -27,8 +39,23 @@ async def register(
     if not images or len(images) == 0:
         raise HTTPException(status_code=400, detail="images_required")
 
-    # Logica de registro ficaria aqui
-    return {"msg": f"Registro realizado para {username} com {len(images)} imagens"}
+    embeddings = []
+    for f in images:
+        data = await f.read()
+        img = decode_image_bytes(data)
+        ok, reason = detect_and_validate(img)
+        if not ok:
+            # early return com motivo para UX
+            return {"success": False, "reason": reason}
+        aligned = align_face(img)
+        face = preprocess_face(aligned)
+        enc = get_embedding(face)
+        if enc is None:
+            return {"success": False, "reason": "encoding_failed"}
+        embeddings.append(enc.tolist())
+
+    stored = user_repo.append_embeddings(username, embeddings)
+    return {"success": True, "stored_embeddings": stored}
     
 
 @app.post("/login")

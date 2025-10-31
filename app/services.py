@@ -109,7 +109,13 @@ def get_embedding(rgb_face: np.ndarray) -> Optional[np.ndarray]:
         # face_recognition não instalado / dlib ausente
         return None
     print("passou")
-    encs = face_recognition.face_encodings(rgb_face)
+
+    try:
+        encs = face_recognition.face_encodings(rgb_face)
+    except Exception as error:
+        logging.warning("face_recognition encoding error: %s", error)
+        return None
+        
     if not encs:
         return None
     return encs[0]

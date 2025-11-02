@@ -68,8 +68,26 @@ async def login(
     if not images or len(images) == 0:
         raise HTTPException(status_code=400, detail="images_required")
     
-    # Logica de login ficaria aqui
-    return {"msg": f"Login realizado para {username}"}
+    known = user_repo.load_embeddings(username)
+    if not known:
+        return {"authenticated": False, "reason": "user_not_found"}
+    
+    candidate_embeddings = []
+    for f in images:
+        data = await f.read()
+        img = decode_image_bytes(data)
+        ok, reason = detect_and_validate(img)
+        if not ok:
+            return {"authenticated": False, "reason": reason}
+        aligned = align_face(img)
+        face = preprocess_face(aligned)
+        enc = get_embedding(face)
+        if enc is None:
+            return {"authenticated": False, "reason": "encoding_failed"}
+        candidate_embeddings.append(enc)
+
+    result = compare_embeddings(known, candidate_embeddings)
+    return result
 
 # Tratamento customizado para erros 404
 @app.exception_handler(StarletteHTTPException)

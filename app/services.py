@@ -100,9 +100,7 @@ def get_embedding(rgb_face: np.ndarray) -> Optional[np.ndarray]:
     Extrai embedding usando face_recognition. Retorna 1-d numpy array ou None.
     """
     try:
-
         import face_recognition
-        print("importei essa bosta")
     except Exception as error:
         # Logar o erro de import de forma segura (evita concatenar objeto Exception)
         logging.warning("face_recognition import error: %s", error)

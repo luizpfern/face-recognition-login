@@ -1,0 +1,16 @@
+build-essential
+cmake
+libboost-all-dev
+libatlas-base-dev
+liblapack-dev
+libopenblas-dev
+libgtk-3-dev
+libx11-dev
+libglib2.0-0
+pkg-config
+libgl1-mesa-glx
+libgl1
+libsm6
+libxrender1
+libxext6
+libgomp1

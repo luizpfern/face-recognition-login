@@ -1,0 +1,211 @@
+:root{
+  --bg:#f7f9fc;
+  --text:#111827;
+  --muted:#6b7280;
+
+  /* tom azul escuro solicitado */
+  --accent:#072042;
+  --brand-gradient-end:#04162b;
+
+  --card-radius:12px;
+  --glass-bg: rgba(255,255,255,0.78);
+}
+
+/* Reset */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh;
+}
+
+/* Accessibility helper */
+.sr-only{
+  position:absolute!important;
+  width:1px;height:1px;
+  padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+/* Fullscreen blurred background (put bg.jpg in same folder) */
+#fundo{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  isolation:isolate;
+}
+#fundo::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:url("imagens/background.png");
+  background-size:cover;
+  background-position:center;
+  filter: blur(12px) saturate(.95);
+  transform: scale(1.03);
+  z-index:0;
+}
+#fundo::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: rgba(12,20,30,0.34);
+  z-index:1;
+  pointer-events:none;
+}
+
+/* Card */
+#retangulo_login{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:420px;
+  max-width:94%;
+  padding:28px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(6px) saturate(120%);
+  border-radius: var(--card-radius);
+  box-shadow: 0 12px 40px rgba(8,16,30,0.22), inset 0 1px 0 rgba(255,255,255,0.6);
+  z-index:10;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+  text-align:center;
+}
+
+/* Logo & title */
+#logo_titulo{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100% }
+#logo{
+  width:84px; height:84px;
+  object-fit:cover;
+  border-radius:10px;
+  box-shadow: 0 6px 18px rgba(7,15,25,0.08);
+  background:#fff; padding:6px;
+  border: 2px solid var(--accent); /* borda azul escuro adicionada */
+}
+#titulo-login{ font-size:1.15rem; margin:0; color:var(--text); font-weight:700; letter-spacing:0.2px }
+
+/* Form */
+#form-login{ width:100%; display:flex; flex-direction:column; gap:12px; margin-top:4px }
+#input_usuario{
+  width:100%;
+  padding:12px 14px;
+  border-radius:8px;
+  border:1px solid rgba(12,20,30,0.06);
+  background: rgba(255,255,255,0.6);
+  font-size:0.98rem;
+  color:var(--text);
+  outline:none;
+  transition: box-shadow .15s, border-color .15s;
+}
+#input_usuario::placeholder{ color:#9aa3ae }
+#input_usuario:focus{ border-color: var(--accent); box-shadow: 0 6px 20px rgba(7,32,66,0.06) }
+
+/* Button */
+.btn{
+  display:inline-block;
+  background:linear-gradient(180deg,var(--accent), var(--brand-gradient-end));
+  color:#fff;
+  padding:12px 14px;
+  border-radius:8px;
+  text-decoration:none;
+  font-weight:700;
+  cursor:pointer;
+  border:0;
+  box-shadow: 0 8px 18px rgba(7,24,55,0.12);
+}
+#entrar{ width:100% }
+
+/* Links / footer */
+#criar_conta{ color:var(--accent); text-decoration:none; font-size:0.95rem; margin-top:6px }
+#criar_conta:hover{ text-decoration:underline }
+#rodape{ margin-top:6px; font-size:0.82rem; color:var(--muted); width:100%; text-align:center }
+
+/* Responsive */
+@media (max-width:480px){
+  #retangulo_login{ padding:20px; width:92% }
+  #logo{ width:64px; height:64px }
+  #titulo-login{ font-size:1rem }
+  #input_usuario{ padding:10px 12px }
+  #entrar{ padding:10px 12px }
+}
+
+
+/*PÁGINA DE NOT FOUND - utilitários de tipografia e botões */
+.lead{
+  font-size:1rem;
+  color:var(--muted);
+  margin:0 0 6px;
+}
+.small{
+  font-size:0.9rem;
+  color:var(--muted);
+  margin:0 0 12px;
+}
+
+/* botão secundário usado na página 404 */
+.btn.secondary{
+  background:transparent;
+  color:var(--accent);
+  border:1px solid rgba(7,12,20,0.06);
+  box-shadow:none;
+  padding:10px 12px;
+  border-radius:8px;
+  font-weight:700;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.btn.secondary:hover{
+  background: rgba(7,12,20,0.04);
+}
+
+/* Ajustes específicos para a página 404 (notfound) */
+#retangulo_login[aria-labelledby="titulo-404"]{
+  width:520px;
+  max-width:96%;
+  padding:34px;
+}
+#retangulo_login[aria-labelledby="titulo-404"] #titulo-404{
+  font-size:1.4rem;
+  margin:6px 0 0;
+}
+#retangulo_login[aria-labelledby="titulo-404"] .lead,
+#retangulo_login[aria-labelledby="titulo-404"] .small{
+  text-align:center;
+}
+
+/* Espaçamento e responsividade do grupo de botões na 404 */
+#retangulo_login[aria-labelledby="titulo-404"] div[style*="display:flex"]{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+#retangulo_login[aria-labelledby="titulo-404"] .btn{
+  min-width:140px;
+}
+
+/* garante que a borda do logo use a cor de marca também na 404 */
+#retangulo_login[aria-labelledby="titulo-404"] #logo{
+  border-color:var(--accent);
+}
+
+/* pequenas correções responsivas para 404 */
+@media (max-width:480px){
+  #retangulo_login[aria-labelledby="titulo-404"]{
+    width:92%;
+    padding:20px;
+  }
+  #retangulo_login[aria-labelledby="titulo-404"] #titulo-404{
+    font-size:1.05rem;
+  }
+}

@@ -20,3 +20,8 @@ class InMemoryUserRepo:
         A existência é verificada pela presença da chave no dicionário interno.
         """
         return username in self._store
+    
+    def print_store(self):
+        """Função auxiliar para debug: imprime o conteúdo do repositório."""
+        for user, embeddings in self._store.items():
+            print(f"User: {user}, Embeddings count: {len(embeddings)}")

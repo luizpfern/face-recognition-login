@@ -59,6 +59,9 @@ async def register(
         embeddings.append(enc.tolist())
 
     stored = user_repo.append_embeddings(username, embeddings)
+
+    user_repo.print_store()  # Debug: imprime o estado atual do repositório
+
     return {"success": True, "stored_embeddings": stored}
     
 
@@ -72,6 +75,8 @@ async def login(
     if not images or len(images) == 0:
         raise HTTPException(status_code=400, detail="images_required")
     
+    user_repo.print_store()  # Debug: imprime o estado atual do repositório
+
     known = user_repo.load_embeddings(username)
     if not known:
         return {"authenticated": False, "reason": "user_not_found"}

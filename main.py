@@ -38,6 +38,9 @@ async def register(
         raise HTTPException(status_code=400, detail="username_required")
     if not images or len(images) == 0:
         raise HTTPException(status_code=400, detail="images_required")
+    
+    user_repo.print_store()  # Debug: imprime o estado atual do repositório
+
 
     # Verifica se usuário já existe para evitar registros duplicados
     if user_repo.user_exists(username):
@@ -59,9 +62,6 @@ async def register(
         embeddings.append(enc.tolist())
 
     stored = user_repo.append_embeddings(username, embeddings)
-
-    user_repo.print_store()  # Debug: imprime o estado atual do repositório
-
     return {"success": True, "stored_embeddings": stored}
     
 

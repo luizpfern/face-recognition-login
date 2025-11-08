@@ -1,7 +1,12 @@
+setuptools>=65.5.0
+wheel
 fastapi
 uvicorn[standard]
 numpy
 opencv-python-headless
 face_recognition
+face_recognition_models
 dlib
 python-multipart
+
+

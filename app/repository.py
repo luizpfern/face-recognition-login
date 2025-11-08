@@ -1,5 +1,17 @@
 from typing import List, Dict
 import pickle
+import os
+
+# try imports that may not be installed in prod; fall back gracefully
+try:
+    import psutil
+except Exception:
+    psutil = None
+
+try:
+    from pympler import asizeof
+except Exception:
+    asizeof = None
 
 # Repositório em memória simples (substituir por DB quando precisar)
 class InMemoryUserRepo:
@@ -32,20 +44,69 @@ class InMemoryUserRepo:
 
         print(f"[repo]   total (nome + embeddings) para '{username}': {total_bytes/1024:.2f} KB")
 
+    def _log_process_mem(self, label: str = "") -> None:
+        """Imprime PID e RSS do processo atual; usa psutil se disponível."""
+        pid = os.getpid()
+        if psutil:
+            try:
+                p = psutil.Process(pid)
+                rss_mb = p.memory_info().rss / 1024 / 1024
+                print(f"[repo][mem] {label} PID={pid} RSS={rss_mb:.1f} MB")
+                return
+            except Exception:
+                pass
+
+        # Fallback: tentar ler /proc/self/status (Linux/Heroku)
+        try:
+            with open(f"/proc/{pid}/status", "r") as f:
+                for line in f:
+                    if line.startswith("VmRSS:"):
+                        parts = line.split()
+                        # VmRSS em kB
+                        kb = float(parts[1])
+                        print(f"[repo][mem] {label} PID={pid} RSS={kb/1024:.1f} MB (from /proc)")
+                        return
+        except Exception:
+            pass
+
+        print(f"[repo][mem] {label} PID={pid} RSS=unknown (install psutil for exact RSS)")
+
     def append_embeddings(self, username: str, embeddings: List[List[float]]) -> int:
+        # log antes
+        self._log_process_mem(label="before append")
+
         if username not in self._store:
             self._store[username] = []
         self._store[username].extend(embeddings)
 
         # Print dos tamanhos em KB para debug/monitoramento
         print(f"[repo] append_embeddings: adicionado {len(embeddings)} embeddings para usuário '{username}'")
+
+        # log deep-size se disponível
+        if asizeof:
+            try:
+                deep_kb = asizeof.asizeof(self._store.get(username, [])) / 1024
+                print(f"[repo][deep] tamanho profundo para '{username}': {deep_kb:.2f} KB")
+            except Exception:
+                pass
+
         self._print_sizes_for_user(username)
+
+        # log depois
+        self._log_process_mem(label="after append")
 
         return len(self._store[username])
 
     def load_embeddings(self, username: str) -> List[List[float]]:
+        # log antes do load
+        self._log_process_mem(label="load start")
+
         entries = self._store.get(username, [])
         # Ao carregar, também imprimimos os tamanhos para inspeção
         print(f"[repo] load_embeddings: carregando {len(entries)} embeddings para usuário '{username}'")
         self._print_sizes_for_user(username)
+
+        # log depois do load
+        self._log_process_mem(label="load end")
+
         return entries

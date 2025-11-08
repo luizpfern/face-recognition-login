@@ -39,6 +39,10 @@ async def register(
     if not images or len(images) == 0:
         raise HTTPException(status_code=400, detail="images_required")
 
+    # Verifica se usuário já existe para evitar registros duplicados
+    if user_repo.user_exists(username):
+        return {"success": False, "reason": "user_already_exists"}
+
     embeddings = []
     for f in images:
         data = await f.read()

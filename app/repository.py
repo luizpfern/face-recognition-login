@@ -13,3 +13,10 @@ class InMemoryUserRepo:
 
     def load_embeddings(self, username: str) -> List[List[float]]:
         return self._store.get(username, [])
+
+    def user_exists(self, username: str) -> bool:
+        """Retorna True se o usuário já estiver presente no repositório em memória.
+
+        A existência é verificada pela presença da chave no dicionário interno.
+        """
+        return username in self._store

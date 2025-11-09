@@ -3,18 +3,23 @@
  * Comportamento para fluxo de login/registro por reconhecimento facial.
  *
  * Funcionalidades:
- * - Intercepta o submit do formulário (já presente no HTML).
- * - Abre a câmera (getUserMedia) e exibe um modal/overlay simples com preview.
- * - Captura 3 frames (frontal e laterais — instruir usuário a virar a cabeça).
- * - Envia as imagens como multipart/form-data para /register ou /login.
- * - Trata respostas do backend e mostra mensagens de status/erro.
+ * - Intercepta o submit do formulário.
+ * - Abre a câmera (getUserMedia) e exibe modal/overlay com preview.
+ * - Captura 3 fotos (frente e laterais com instruções).
+ * - Envia imagens como multipart/form-data para /register ou /login.
+ * - Trata respostas e mostra mensagens status/erro.
  *
  * Observações:
- * - Endpoints esperados: POST /register e POST /login (multipart form: username, images[]).
- * - A API pode retornar mensagens como reason codes:
- *     "no_face_detected", "multiple_faces", "face_blurry", "face_dark",
- *     "face_too_small", "encoding_failed", "user_not_found", "face_already_registered", etc.
- * - Ajuste URLs/paths conforme seu backend real.
+ * - Endpoints: POST /register e POST /login (multipart: username + images[]).
+ * - A API retorna códigos de erro amigáveis:
+ *     "no_face_detected" - nenhum rosto detectado
+ *     "multiple_faces" - múltiplas faces na foto
+ *     "face_blurry" - foto borrada
+ *     "face_dark" - foto escura
+ *     "face_too_small" - rosto muito pequeno/distante
+ *     "encoding_failed" - falha ao extrair features
+ *     "user_not_found" - usuário não encontrado
+ *     "face_already_registered" - rosto já cadastrado
  */
 
 (function () {
@@ -25,9 +30,20 @@
   const MAX_WIDTH = 640; // canvas max width
   const MAX_HEIGHT = 480;
 
-  // Elementos do DOM (assume existência no HTML enviado)
-  const form = document.getElementById('form-login');
-  const usernameInput = document.getElementById('input_usuario');
+  // Verifica se tem câmera disponível
+  async function checkCameraAvailability() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.some(device => device.kind === 'videoinput');
+    } catch (err) {
+      console.error('Erro ao verificar câmeras:', err);
+      return false;
+    }
+  }
+
+  // Elementos do DOM (busca robusta para aceitar login ou registro em páginas diferentes)
+  const form = document.querySelector('#form-login, #form-register');
+  const usernameInput = document.querySelector('#input_usuario, #input_usuario_reg, input[name="username"], input[name="usuario"]');
   const entrarBtn = document.getElementById('entrar');
 
   // Cria elementos dinâmicos usados durante captura
@@ -90,17 +106,19 @@
 
     startCamBtn = document.createElement('button');
     startCamBtn.type = 'button';
-    startCamBtn.innerText = 'Iniciar câmera';
+    startCamBtn.innerHTML = '<span>Iniciar câmera</span>';
     startCamBtn.className = 'btn';
     startCamBtn.style.marginRight = '8px';
+    startCamBtn.style.minWidth = '140px';
     controls.appendChild(startCamBtn);
 
     captureBtn = document.createElement('button');
     captureBtn.type = 'button';
-    captureBtn.innerText = 'Capturar 3 fotos';
+    captureBtn.innerHTML = '<span>Capturar fotos</span>';
     captureBtn.className = 'btn';
     captureBtn.disabled = true;
     captureBtn.style.marginRight = '8px';
+    captureBtn.style.minWidth = '140px';
     controls.appendChild(captureBtn);
 
     closeBtn = document.createElement('button');
@@ -119,23 +137,142 @@
     closeBtn.addEventListener('click', cleanupAndCloseOverlay);
   }
 
-  function showStatus(text) {
+  function showStatus(text, type = 'info') {
     if (!statusEl) return;
     statusEl.innerText = text;
+    
+    // Estilos por tipo de mensagem
+    const styles = {
+      info: { bg: '#f3f4f6', color: '#374151' },
+      success: { bg: '#dcfce7', color: '#166534' },
+      error: { bg: '#fee2e2', color: '#991b1b' },
+      warning: { bg: '#fff7ed', color: '#9a3412' }
+    };
+    
+    Object.assign(statusEl.style, {
+      backgroundColor: styles[type]?.bg || styles.info.bg,
+      color: styles[type]?.color || styles.info.color,
+      padding: '12px',
+      borderRadius: '6px',
+      marginTop: '12px',
+      marginBottom: '12px'
+    });
+  }
+
+  // Helper para mostrar loading state nos botões
+  function setButtonLoading(button, isLoading, originalText) {
+    if (!button) return;
+    if (isLoading) {
+      button.disabled = true;
+      button.innerHTML = '<span class="loading"></span><span>Aguarde...</span>';
+    } else {
+      button.disabled = false;
+      button.innerHTML = `<span>${originalText}</span>`;
+    }
   }
 
   async function startCamera() {
-    showStatus('Solicitando permissão para câmera...');
+    showStatus('Solicitando permissão para câmera...', 'info');
+    setButtonLoading(startCamBtn, true);
+
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: MAX_WIDTH },
+          height: { ideal: MAX_HEIGHT },
+        }, 
+        audio: false 
+      });
+      
       video.srcObject = stream;
-      captureBtn.disabled = false;
-      startCamBtn.disabled = true;
-      showStatus('Câmera ativa. Prepare-se.');
+      video.onloadedmetadata = () => {
+        captureBtn.disabled = false;
+        startCamBtn.disabled = true;
+        showStatus('Câmera ativa. Centralize seu rosto e mantenha boa iluminação.', 'success');
+        setButtonLoading(startCamBtn, false, 'Iniciar câmera');
+        
+        // Inicia análise em tempo real
+        startQualityCheck();
+      };
+
     } catch (err) {
       console.error('Erro ao iniciar câmera:', err);
-      showStatus('Erro ao acessar câmera: ' + (err.message || err.name));
+      let errorMsg = 'Erro ao acessar câmera: ';
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMsg += 'Permissão negada. Por favor, permita o acesso à câmera.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMsg += 'Nenhuma câmera encontrada.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMsg += 'Câmera em uso por outro aplicativo.';
+      } else {
+        errorMsg += err.message || 'Verifique se sua câmera está conectada e funcionando.';
+      }
+      
+      showStatus(errorMsg, 'error');
+      setButtonLoading(startCamBtn, false, 'Iniciar câmera');
     }
+  }
+
+  // Análise em tempo real da qualidade da imagem
+  let qualityCheckInterval;
+  function startQualityCheck() {
+    if (qualityCheckInterval) clearInterval(qualityCheckInterval);
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+
+    qualityCheckInterval = setInterval(() => {
+      if (!video || !stream) return;
+      
+      ctx.drawImage(video, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const { brightness, blurriness } = analyzeImage(imageData);
+      
+      let message = '';
+      let type = 'info';
+      
+      if (brightness < 50) {
+        message = '⚠️ Ambiente muito escuro. Melhore a iluminação.';
+        type = 'warning';
+      } else if (brightness > 200) {
+        message = '⚠️ Iluminação muito forte. Evite luz direta.';
+        type = 'warning';
+      } else if (blurriness > 0.5) {
+        message = '⚠️ Imagem um pouco borrada. Mantenha a câmera estável.';
+        type = 'warning';
+      } else {
+        message = '✅ Qualidade da imagem adequada para captura.';
+        type = 'success';
+      }
+      
+      showStatus(message, type);
+    }, 1000);
+  }
+
+  // Análise de qualidade da imagem
+  function analyzeImage(imageData) {
+    let brightness = 0;
+    let blurriness = 0;
+    
+    // Calcula brilho médio
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      brightness += (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+    }
+    brightness = brightness / (imageData.width * imageData.height);
+    
+    // Estimativa simples de blur baseada em variação de pixels
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      if (i > 0) {
+        blurriness += Math.abs(imageData.data[i] - imageData.data[i - 4]);
+      }
+    }
+    blurriness = 1 - (blurriness / imageData.data.length);
+    
+    return { brightness, blurriness };
   }
 
   async function stopCamera() {
@@ -272,23 +409,25 @@
   }
 
   // Handler quando usuário clica em "Seguir para a Câmera" (form submit)
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const username = usernameInput.value.trim();
-    if (!username) {
-      alert('Informe o usuário antes de prosseguir.');
-      return;
-    }
+  if (form) {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const username = usernameInput && usernameInput.value ? usernameInput.value.trim() : '';
+      if (!username) {
+        alert('Informe o usuário antes de prosseguir.');
+        return;
+      }
 
-    // Criar overlay/modal de captura
-    if (!overlay) createOverlay();
+      // Criar overlay/modal de captura
+      if (!overlay) createOverlay();
 
-    // Abrir câmera se ainda não aberta (startCamera será chamada pelo overlay)
-    // Ativa instrução para o usuário: depois de iniciar a câmera, clicar em "Capturar 3 fotos".
-    showStatus('Abra a câmera e capture 3 fotos para continuar.');
+      // Abrir câmera se ainda não aberta (startCamera será chamada pelo overlay)
+      // Ativa instrução para o usuário: depois de iniciar a câmera, clicar em "Capturar 3 fotos".
+      showStatus('Abra a câmera e capture 3 fotos para continuar.');
 
-    // Observação: não iniciamos a captura automaticamente para dar controle ao usuário.
-  });
+      // Observação: não iniciamos a captura automaticamente para dar controle ao usuário.
+    });
+  }
 
   // Função chamada quando o botão "Capturar 3 fotos" no overlay é pressionado
   async function onCaptureClicked() {
@@ -306,11 +445,10 @@
       startCamBtn.disabled = false; // permite reiniciar se precisar
       captureBtn.disabled = true;
 
-      // Decidir endpoint: se o link "Criar conta" foi clicado anteriormente talvez deseje register.
-      // Por simplicidade: perguntar ao usuário diretamente (alternativa: criar botão separado no form)
-      const isRegister = confirm('Deseja usar essas fotos para REGISTRAR (OK) ou para LOGIN (Cancelar)?');
-
-      const endpoint = isRegister ? '/register' : '/login';
+  // Decidir endpoint. Permite que outros scripts prefiram o modo (ex: register.js define preferredMode)
+  const preferred = window._FaceAuth && window._FaceAuth.preferredMode ? window._FaceAuth.preferredMode : null;
+  const isRegister = preferred === 'register' ? true : confirm('Deseja usar essas fotos para REGISTRAR (OK) ou para LOGIN (Cancelar)?');
+  const endpoint = isRegister ? '/register' : '/login';
       await sendImages(endpoint, username, blobs);
 
       // Fechar overlay após envio (mantemos por 2s para leitura)
@@ -321,11 +459,13 @@
     }
   }
 
-  // Expõe funções úteis para depuração (opcional)
+  // Expõe funções úteis para depuração (opcional) e allow preferred mode control
   window._FaceAuth = {
     startCamera,
     stopCamera,
     captureFrames,
     sendImages,
+    preferredMode: null,
+    setPreferredMode(mode){ this.preferredMode = mode; }
   };
 })();

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Criar Conta — Reconhecimento Facial</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <div id="fundo" aria-hidden="true"></div>
+
+  <main class="card-centered" role="main" aria-labelledby="titulo-register">
+    <div class="logo-titulo">
+      <img src="../imagens/logo-image.jfif" alt="Logo" id="logo" class="logo" />
+      <h1 id="titulo-register" class="titulo">Criar Conta</h1>
+
+      <form id="form-register" class="form" aria-label="Formulário de registro">
+        <label for="input_usuario_reg" class="sr-only">Usuário</label>
+        <input type="text" id="input_usuario_reg" name="username" class="input" placeholder="Nome de usuário" autocomplete="username" />
+        <p class="small">Você precisará capturar 3 fotos para criar o perfil biométrico.</p>
+        <button id="registrar" class="btn btn-full" type="submit">Registrar e Capturar Fotos</button>
+      </form>
+
+      <a href="index.html" class="link">Voltar ao Login</a>
+    </div>
+
+    <footer class="footer">
+      <p>© 2024 KRLFP Solutions.</p>
+    </footer>
+  </main>
+
+  <script src="../scripts/api.js"></script>
+  <script src="../scripts/register.js"></script>
+</body>
+</html>

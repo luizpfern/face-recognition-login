@@ -1,0 +1,7 @@
+ErrorDocument 404 /pages/notfound.html
+
+RewriteEngine On
+RewriteBase /
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /pages/notfound.html [L]

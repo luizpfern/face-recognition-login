@@ -102,8 +102,15 @@ async def login(
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:
-        return FileResponse("www/notfound.html", status_code=404, media_type="text/html")
+        # after reorganizing HTML files into /www/pages we need to serve the 404 from there
+        return FileResponse("www/pages/notfound.html", status_code=404, media_type="text/html")
     return await http_exception_handler(request, exc)
+
+
+# Serve the app entrypoint at root so uvicorn/main dev server returns the expected page
+@app.get("/", include_in_schema=False)
+async def root_index():
+    return FileResponse("www/pages/index.html", media_type="text/html")
 
 # Retorna a interface web (colocado depois das rotas para não interceptar requisições POST)
 app.mount("/", StaticFiles(directory="www", html=True), name="www")

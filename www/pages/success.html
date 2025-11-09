@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login Bem-sucedido - Reconhecimento Facial</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <div id="fundo" aria-hidden="true"></div>
+
+  <main class="card-centered" role="main" aria-labelledby="titulo-success">
+    <div class="logo-titulo">
+      <img src="../imagens/logo-image.jfif" alt="Logo do serviço" id="logo" class="logo" />
+      <h1 id="titulo-success" class="titulo">Login Bem-sucedido!</h1>
+      
+      <div style="margin: 20px 0;">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #22c55e;">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 12.5L10.5 15L16 9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <p class="lead">Seu login foi autenticado com sucesso através do reconhecimento facial.</p>
+      <div class="btn-group" style="width: 100%; margin-top: 12px;">
+        <button id="btn-sair" class="btn btn-full">Sair</button>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>© 2024 KRLFP Solutions. Todos os direitos reservados.</p>
+    </footer>
+  </main>
+
+  <script>
+
+    // Botão de sair
+    const btnSair = document.getElementById('btn-sair');
+    if (btnSair) {
+      btnSair.addEventListener('click', function() {
+        // Limpar dados da sessão
+        sessionStorage.clear();
+        localStorage.clear();
+        
+        // Redirecionar para a página inicial
+        window.location.href = '/pages/index.html';
+      });
+    }
+  </script>
+</body>
+</html>

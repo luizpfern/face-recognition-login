@@ -193,7 +193,7 @@
         setButtonLoading(startCamBtn, false, 'Iniciar câmera');
         
         // Inicia análise em tempo real
-        startQualityCheck();
+        //startQualityCheck();
       };
 
     } catch (err) {
@@ -213,66 +213,6 @@
       showStatus(errorMsg, 'error');
       setButtonLoading(startCamBtn, false, 'Iniciar câmera');
     }
-  }
-
-  // Análise em tempo real da qualidade da imagem
-  let qualityCheckInterval;
-  function startQualityCheck() {
-    if (qualityCheckInterval) clearInterval(qualityCheckInterval);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-
-    qualityCheckInterval = setInterval(() => {
-      if (!video || !stream) return;
-      
-      ctx.drawImage(video, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const { brightness, blurriness } = analyzeImage(imageData);
-      
-      let message = '';
-      let type = 'info';
-      
-      if (brightness < 50) {
-        message = '⚠️ Ambiente muito escuro. Melhore a iluminação.';
-        type = 'warning';
-      } else if (brightness > 200) {
-        message = '⚠️ Iluminação muito forte. Evite luz direta.';
-        type = 'warning';
-      } else if (blurriness > 0.5) {
-        message = '⚠️ Imagem um pouco borrada. Mantenha a câmera estável.';
-        type = 'warning';
-      } else {
-        message = '✅ Qualidade da imagem adequada para captura.';
-        type = 'success';
-      }
-      
-      showStatus(message, type);
-    }, 1000);
-  }
-
-  // Análise de qualidade da imagem
-  function analyzeImage(imageData) {
-    let brightness = 0;
-    let blurriness = 0;
-    
-    // Calcula brilho médio
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      brightness += (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
-    }
-    brightness = brightness / (imageData.width * imageData.height);
-    
-    // Estimativa simples de blur baseada em variação de pixels
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      if (i > 0) {
-        blurriness += Math.abs(imageData.data[i] - imageData.data[i - 4]);
-      }
-    }
-    blurriness = 1 - (blurriness / imageData.data.length);
-    
-    return { brightness, blurriness };
   }
 
   async function stopCamera() {
@@ -316,11 +256,11 @@
     for (let i = 0; i < n; i++) {
       // instruções para o usuário entre capturas
       if (i === 0) {
-        showStatus('Foto 1: frontal — mantenha o rosto centralizado.');
+        showStatus('Caputrando imagens... 1/3');
       } else if (i === 1) {
-        showStatus('Foto 2: vire levemente a cabeça para a esquerda.');
+        showStatus('Caputrando imagens... 2/3');
       } else {
-        showStatus('Foto 3: vire levemente a cabeça para a direita.');
+        showStatus('Caputrando imagens... 3/3');
       }
 
       // esperar um pequeno tempo antes de capturar (para movimento)
@@ -359,6 +299,7 @@
   }
 
   function handleApiResponse(json, status) {
+    console.log("🚀 ~ handleApiResponse ~ json1:", json)
     // Tratar responses padrão e reason codes
     if (!json) {
       showStatus('Resposta vazia do servidor.');
@@ -379,9 +320,10 @@
 
     // Casos de falha com reason
     const reason = json.reason || json.message || (json.success === false ? 'failed' : null);
+    console.log("🚀 ~ handleApiResponse ~ reason:", reason)
     if (reason) {
       const friendly = mapReasonToFriendly(reason);
-      showStatus('Falha: ' + friendly);
+      alertModal(friendly);
       return;
     }
 
@@ -432,6 +374,7 @@
   // Função chamada quando o botão "Capturar 3 fotos" no overlay é pressionado
   async function onCaptureClicked() {
     const username = usernameInput.value.trim();
+    console.log("🚀 ~ onCaptureClicked ~ username:", username)
     if (!username) {
       showStatus('Informe o usuário antes de capturar.');
       return;
@@ -439,16 +382,17 @@
     try {
       // Captura as imagens
       const blobs = await captureFrames(CAPTURE_COUNT, CAPTURE_DELAY_MS);
+      console.log("🚀 ~ onCaptureClicked ~ blobs:", blobs)
 
       // Desliga a câmera imediatamente após capturar
       await stopCamera();
       startCamBtn.disabled = false; // permite reiniciar se precisar
       captureBtn.disabled = true;
 
-  // Decidir endpoint. Permite que outros scripts prefiram o modo (ex: register.js define preferredMode)
-  const preferred = window._FaceAuth && window._FaceAuth.preferredMode ? window._FaceAuth.preferredMode : null;
-  const isRegister = preferred === 'register' ? true : confirm('Deseja usar essas fotos para REGISTRAR (OK) ou para LOGIN (Cancelar)?');
-  const endpoint = isRegister ? '/register' : '/login';
+      // Decidir endpoint. Permite que outros scripts prefiram o modo (ex: register.js define preferredMode)
+      const preferred = window._FaceAuth && window._FaceAuth.preferredMode ? window._FaceAuth.preferredMode : null;
+      const isRegister = preferred === 'register' ? true : confirm('Deseja usar essas fotos para REGISTRAR (OK) ou para LOGIN (Cancelar)?');
+      const endpoint = isRegister ? '/register' : '/login';
       await sendImages(endpoint, username, blobs);
 
       // Fechar overlay após envio (mantemos por 2s para leitura)
@@ -457,6 +401,97 @@
       console.error('Erro durante captura/envio:', err);
       showStatus('Erro ao capturar: ' + (err.message || err));
     }
+  }
+
+  async function alertModal(message) { // modal de alerta seguindo estilo da página
+    return new Promise((resolve) => {
+      // Remove modal anterior se existir
+      const existingModal = document.getElementById('fr-alert-modal');
+      if (existingModal) existingModal.remove();
+
+      // Criar overlay
+      const alertOverlay = document.createElement('div');
+      alertOverlay.id = 'fr-alert-modal';
+      Object.assign(alertOverlay.style, {
+        position: 'fixed',
+        inset: '0',
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+        animation: 'fadeIn 0.2s ease-out'
+      });
+
+      // Criar caixa do modal
+      const modalBox = document.createElement('div');
+      Object.assign(modalBox.style, {
+        width: '400px',
+        maxWidth: '90%',
+        background: '#fff',
+        padding: '24px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        animation: 'slideIn 0.3s ease-out'
+      });
+
+      // Título do modal
+      const title = document.createElement('h3');
+      title.innerText = 'Atenção';
+      Object.assign(title.style, {
+        margin: '0 0 16px 0',
+        fontSize: '20px',
+        fontWeight: '600',
+        color: '#374151'
+      });
+      modalBox.appendChild(title);
+
+      // Mensagem
+      const messageEl = document.createElement('p');
+      messageEl.innerText = message;
+      Object.assign(messageEl.style, {
+        margin: '0 0 24px 0',
+        fontSize: '15px',
+        lineHeight: '1.5',
+        color: '#6b7280'
+      });
+      modalBox.appendChild(messageEl);
+
+      // Botão OK
+      const okBtn = document.createElement('button');
+      okBtn.type = 'button';
+      okBtn.innerText = 'OK';
+      okBtn.className = 'btn';
+      Object.assign(okBtn.style, {
+        width: '100%',
+        padding: '10px',
+        fontSize: '15px',
+        cursor: 'pointer'
+      });
+      
+      okBtn.addEventListener('click', () => {
+        alertOverlay.remove();
+        resolve();
+      });
+      
+      modalBox.appendChild(okBtn);
+      alertOverlay.appendChild(modalBox);
+      document.body.appendChild(alertOverlay);
+
+      // Adicionar animações CSS
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideIn {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+    });
   }
 
   // Expõe funções úteis para depuração (opcional) e allow preferred mode control

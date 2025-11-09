@@ -285,6 +285,10 @@
     blobs.forEach((b, i) => form.append('images', b, `img_${i}.jpg`));
 
     showStatus('Enviando imagens para a API...');
+
+    console.log('Enviando para endpoint:', endpoint);
+    console.log('Dados a serem enviados:', Array.from(form.entries()));
+
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
@@ -313,7 +317,6 @@
         return;
       } else {
         const reason = json.reason || json.message || (json.success === false ? 'failed' : null);
-        console.log("🚀 ~ handleApiResponse ~ reason:", reason)
         if (reason) {
           const friendly = mapReasonToFriendly(reason);
           alertModal(friendly);
@@ -379,7 +382,6 @@
   // Função chamada quando o botão "Capturar 3 fotos" no overlay é pressionado
   async function onCaptureClicked() {
     const username = usernameInput.value.trim();
-    console.log("🚀 ~ onCaptureClicked ~ username:", username)
     if (!username) {
       showStatus('Informe o usuário antes de capturar.');
       return;
@@ -387,7 +389,6 @@
     try {
       // Captura as imagens
       const blobs = await captureFrames(CAPTURE_COUNT, CAPTURE_DELAY_MS);
-      console.log("🚀 ~ onCaptureClicked ~ blobs:", blobs)
 
       // Desliga a câmera imediatamente após capturar
       await stopCamera();
@@ -396,7 +397,7 @@
 
       // Decidir endpoint. Permite que outros scripts prefiram o modo (ex: register.js define preferredMode)
       const preferred = window._FaceAuth && window._FaceAuth.preferredMode ? window._FaceAuth.preferredMode : null;
-      const isRegister = preferred === 'register' ? true : confirm('Deseja usar essas fotos para REGISTRAR (OK) ou para LOGIN (Cancelar)?');
+      const isRegister = preferred === 'register' ? true : false;
       const endpoint = isRegister ? '/register' : '/login';
       await sendImages(endpoint, username, blobs);
 
@@ -506,6 +507,8 @@
     captureFrames,
     sendImages,
     preferredMode: null,
-    setPreferredMode(mode){ this.preferredMode = mode; }
+    setPreferredMode(mode){
+      this.preferredMode = mode; 
+    }
   };
 })();

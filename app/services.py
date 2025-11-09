@@ -14,7 +14,7 @@ from app.utils import (
 # Config simples (ajuste conforme necessário)
 BRIGHTNESS_MIN = 50
 BRIGHTNESS_MAX = 230
-BLUR_THRESHOLD = 80.0
+BLUR_THRESHOLD = 40.0
 MIN_FACE_AREA_RATIO = 0.05
 TARGET_FACE_SIDE = 150
 FACE_DISTANCE_THRESHOLD = 0.6
@@ -38,6 +38,9 @@ def detect_and_validate(img_bgr: np.ndarray) -> Tuple[bool, Optional[str]]:
         return False, "invalid_image"
 
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+
+    print("Mean brightness:", mean_brightness(gray))
+    print("Blurriness:", measure_blur(gray))
 
     if mean_brightness(gray) < BRIGHTNESS_MIN:
         return False, "face_dark"

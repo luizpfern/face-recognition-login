@@ -78,6 +78,7 @@ async def login(
     user_repo.print_store()  # Debug: imprime o estado atual do repositório
 
     known = user_repo.load_embeddings(username)
+    print("Known embeddings for user", username, ":", known)  # Debug: imprime embeddings carregados
     if not known:
         return {"authenticated": False, "reason": "user_not_found"}
     

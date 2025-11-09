@@ -13,7 +13,7 @@ class InMemoryUserRepo:
         return len(self._store[username])
 
     def load_embeddings(self, username: str) -> List[List[float]]:
-        print(f"Loading embeddings for {username}")
+        self.print_store()  # Debug: imprime o estado atual do repositório
         return self._store.get(username, [])
 
     def user_exists(self, username: str) -> bool:

@@ -1,15 +1,57 @@
 from typing import List, Dict
+import json
+import os
+from pathlib import Path
 
-# Repositório em memória simples (substituir por DB quando precisar)
+# Repositório com persistência em arquivo JSON
 class InMemoryUserRepo:
-    def __init__(self):
+    def __init__(self, storage_file: str = "users_data.json"):
+        """
+        Inicializa o repositório com persistência em arquivo JSON.
+        
+        Args:
+            storage_file: Caminho do arquivo JSON para persistência dos dados
+        """
+        self.storage_file = storage_file
         self._store: Dict[str, List[List[float]]] = {}
+        self._load_from_file()
+
+    def _load_from_file(self):
+        """Carrega dados do arquivo JSON se existir."""
+        if os.path.exists(self.storage_file):
+            try:
+                with open(self.storage_file, 'r', encoding='utf-8') as f:
+                    self._store = json.load(f)
+                print(f"✅ Dados carregados de {self.storage_file}: {len(self._store)} usuários")
+                self.print_store()
+            except Exception as e:
+                print(f"⚠️ Erro ao carregar dados de {self.storage_file}: {e}")
+                self._store = {}
+        else:
+            print(f"ℹ️ Arquivo {self.storage_file} não existe. Iniciando com repositório vazio.")
+            self._store = {}
+
+    def _save_to_file(self):
+        """Salva dados no arquivo JSON."""
+        try:
+            # Garante que o diretório existe
+            Path(self.storage_file).parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(self.storage_file, 'w', encoding='utf-8') as f:
+                json.dump(self._store, f, indent=2, ensure_ascii=False)
+            print(f"💾 Dados salvos em {self.storage_file}")
+        except Exception as e:
+            print(f"❌ Erro ao salvar dados em {self.storage_file}: {e}")
 
     def append_embeddings(self, username: str, embeddings: List[List[float]]) -> int:
         if username not in self._store:
             self._store[username] = []
         self._store[username].extend(embeddings)
         print(f"Embeddings stored for {username}: {len(self._store[username])}")
+        
+        # Persiste os dados após adicionar
+        self._save_to_file()
+        
         return len(self._store[username])
 
     def load_embeddings(self, username: str) -> List[List[float]]:
@@ -25,5 +67,9 @@ class InMemoryUserRepo:
     
     def print_store(self):
         """Função auxiliar para debug: imprime o conteúdo do repositório."""
-        for user, embeddings in self._store.items():
-            print(f"User: {user}, Embeddings count: {len(embeddings)}")
+        if not self._store:
+            print("📋 Repositório vazio - nenhum usuário cadastrado")
+        else:
+            print(f"📋 Repositório contém {len(self._store)} usuário(s):")
+            for user, embeddings in self._store.items():
+                print(f"   - User: {user}, Embeddings count: {len(embeddings)}")

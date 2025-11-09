@@ -1,3 +1,6 @@
 /__pycache__
 /app/__pycache__
 /.venv
+
+# Dados de usuários (embeddings faciais)
+users_data.json

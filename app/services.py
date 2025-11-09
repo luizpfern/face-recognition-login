@@ -12,7 +12,7 @@ from app.utils import (
 # Import lazy inside function to facilitar testes sem dlib instalado
 
 # Config simples (ajuste conforme necessário)
-BRIGHTNESS_MIN = 50
+BRIGHTNESS_MIN = 25
 BRIGHTNESS_MAX = 230
 BLUR_THRESHOLD = 40.0
 MIN_FACE_AREA_RATIO = 0.05

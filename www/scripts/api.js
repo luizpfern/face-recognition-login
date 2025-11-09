@@ -291,14 +291,15 @@
         body: form,
       });
       const json = await resp.json();
-      handleApiResponse(json, resp.status);
+      handleApiResponse(json, endpoint);
     } catch (err) {
       console.error('Erro no envio:', err);
       showStatus('Erro ao enviar: ' + (err.message || err));
     }
   }
 
-  function handleApiResponse(json, status) {
+  function handleApiResponse(json, endpoint) {
+    console.log("🚀 ~ handleApiResponse ~ endpoint:", endpoint)
     console.log("🚀 ~ handleApiResponse ~ json1:", json)
     // Tratar responses padrão e reason codes
     if (!json) {
@@ -306,29 +307,33 @@
       return;
     }
 
-    // Sucesso típico de /register: { success: true, stored_embeddings: N }
-    if (json.success === true) {
-      showStatus('Registro efetuado com sucesso.');
-      return;
+    if (endpoint === '/register') {
+      if (json.success === true) {
+        alertModal('Registro efetuado com sucesso.');
+        return;
+      } else {
+        const reason = json.reason || json.message || (json.success === false ? 'failed' : null);
+        console.log("🚀 ~ handleApiResponse ~ reason:", reason)
+        if (reason) {
+          const friendly = mapReasonToFriendly(reason);
+          alertModal(friendly);
+          return;
+        }
+      }
+    } else if (endpoint === '/login') {
+      // Redirecionar para tela principal de autenticado!
+      if (json.authenticated === true) {
+        alertModal('Autenticado com sucesso! Votes: ' + (json.votes ?? '?') + ', avg_distance: ' + (json.avg_distance ?? '?'))
+          .then(() => {
+            window.location.href = '/dashboard'; // ou outra página principal
+          });
+        return;
+      } else {
+        const reason = json.reason || json.message || (json.authenticated === false ? 'not_matched' : null);
+        alertModal(mapReasonToFriendly(reason));
+        return;
+      }
     }
-
-    // Login resposta típica: { authenticated: true, votes: 2, avg_distance: 0.42 }
-    if (json.authenticated === true) {
-      showStatus('Autenticado com sucesso. Votes: ' + (json.votes ?? '?') + ', avg_distance: ' + (json.avg_distance ?? '?'));
-      return;
-    }
-
-    // Casos de falha com reason
-    const reason = json.reason || json.message || (json.success === false ? 'failed' : null);
-    console.log("🚀 ~ handleApiResponse ~ reason:", reason)
-    if (reason) {
-      const friendly = mapReasonToFriendly(reason);
-      alertModal(friendly);
-      return;
-    }
-
-    // Fallback: mostrar JSON bruto
-    showStatus('Resposta do servidor: ' + JSON.stringify(json));
   }
 
   function mapReasonToFriendly(reason) {

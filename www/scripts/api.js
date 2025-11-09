@@ -85,7 +85,7 @@
 
     const instructions = document.createElement('p');
     instructions.id = 'fr-instructions';
-    instructions.innerText = 'Centralize o rosto e clique em "Iniciar câmera". Depois siga as instruções para as 3 fotos (frente e laterais).';
+    instructions.innerText = 'Centralize o rosto e clique em "Iniciar câmera". Depois siga as instruções para as 3 fotos.';
     box.appendChild(instructions);
 
     video = document.createElement('video');
@@ -350,10 +350,10 @@
       face_too_small: 'Rosto muito distante/pequeno. Aproxime-se da câmera.',
       encoding_failed: 'Não foi possível extrair características do rosto. Tente outra foto.',
       user_not_found: 'Usuário não encontrado. Verifique o nome ou registre-se primeiro.',
-      face_already_registered: 'Esse rosto já está registrado. Caso seja você, faça login.',
       not_matched: 'Rosto não corresponde ao usuário informado.',
       invalid_image: 'Imagem inválida.',
       failed: 'Operação falhou. Tente novamente.',
+      user_already_exists: 'Usuário já existe. Tente outro nome.'
     };
     return map[reason] || reason;
   }

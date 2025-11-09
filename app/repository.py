@@ -9,9 +9,11 @@ class InMemoryUserRepo:
         if username not in self._store:
             self._store[username] = []
         self._store[username].extend(embeddings)
+        print(f"Embeddings stored for {username}: {len(self._store[username])}")
         return len(self._store[username])
 
     def load_embeddings(self, username: str) -> List[List[float]]:
+        print(f"Loading embeddings for {username}")
         return self._store.get(username, [])
 
     def user_exists(self, username: str) -> bool:

@@ -326,7 +326,7 @@
     } else if (endpoint === '/login') {
       // Redirecionar para tela principal de autenticado!
       if (json.authenticated === true) {
-        alertModal('Autenticado com sucesso! Votes: ' + (json.votes ?? '?') + ', avg_distance: ' + (json.avg_distance ?? '?'))
+        alertModal('Autenticado com sucesso!')
           .then(() => {
             window.location.href = 'pages/success.html'; // ou outra página principal
           });

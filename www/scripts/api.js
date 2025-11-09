@@ -328,7 +328,7 @@
       if (json.authenticated === true) {
         alertModal('Autenticado com sucesso! Votes: ' + (json.votes ?? '?') + ', avg_distance: ' + (json.avg_distance ?? '?'))
           .then(() => {
-            window.location.href = 'pages/success'; // ou outra página principal
+            window.location.href = 'pages/success.html'; // ou outra página principal
           });
         return;
       } else {

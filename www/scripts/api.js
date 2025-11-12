@@ -30,17 +30,6 @@
   const MAX_WIDTH = 640; // canvas max width
   const MAX_HEIGHT = 480;
 
-  // Verifica se tem câmera disponível
-  async function checkCameraAvailability() {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices.some(device => device.kind === 'videoinput');
-    } catch (err) {
-      console.error('Erro ao verificar câmeras:', err);
-      return false;
-    }
-  }
-
   // Elementos do DOM (busca robusta para aceitar login ou registro em páginas diferentes)
   const form = document.querySelector('#form-login, #form-register');
   const usernameInput = document.querySelector('#input_usuario, #input_usuario_reg, input[name="username"], input[name="usuario"]');
@@ -256,11 +245,11 @@
     for (let i = 0; i < n; i++) {
       // instruções para o usuário entre capturas
       if (i === 0) {
-        showStatus('Caputrando imagens... 1/3');
+        showStatus('Capturando imagens... 1/3');
       } else if (i === 1) {
-        showStatus('Caputrando imagens... 2/3');
+        showStatus('Capturando imagens... 2/3');
       } else {
-        showStatus('Caputrando imagens... 3/3');
+        showStatus('Capturando imagens... 3/3');
       }
 
       // esperar um pequeno tempo antes de capturar (para movimento)

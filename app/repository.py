@@ -22,13 +22,10 @@ class InMemoryUserRepo:
             try:
                 with open(self.storage_file, 'r', encoding='utf-8') as f:
                     self._store = json.load(f)
-                print(f"✅ Dados carregados de {self.storage_file}: {len(self._store)} usuários")
                 self.print_store()
             except Exception as e:
-                print(f"⚠️ Erro ao carregar dados de {self.storage_file}: {e}")
                 self._store = {}
         else:
-            print(f"ℹ️ Arquivo {self.storage_file} não existe. Iniciando com repositório vazio.")
             self._store = {}
 
     def _save_to_file(self):
@@ -39,9 +36,8 @@ class InMemoryUserRepo:
             
             with open(self.storage_file, 'w', encoding='utf-8') as f:
                 json.dump(self._store, f, indent=2, ensure_ascii=False)
-            print(f"💾 Dados salvos em {self.storage_file}")
         except Exception as e:
-            print(f"❌ Erro ao salvar dados em {self.storage_file}: {e}")
+            print(f"Erro ao salvar dados em {self.storage_file}: {e}")
 
     def append_embeddings(self, username: str, embeddings: List[List[float]]) -> int:
         if username not in self._store:
